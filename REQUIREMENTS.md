@@ -54,12 +54,12 @@ Python 3.11+. Runs as a standalone script/process outside of Docker (connects to
 
 ### Components
 
-| Component | Responsibility |
-|-----------|---------------|
-| **Scheduler** | Holds the production schedule (ordered list of production orders). Dispatches the next order when the line is idle. |
-| **MES** | Receives an order from the Scheduler. Sets up the line (state → Setup, loads recipe, resets counters), then hands off to the Production engine. |
-| **Production Engine** | Runs the production loop: ticks line speed, evaluates stoppages, increments good units and waste, publishes MQTT updates on each tick. |
-| **MQTT Publisher** | Thin wrapper around `paho-mqtt`. All MQTT writes go through here. |
+| Component             | Responsibility                                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scheduler**         | Holds the production schedule (ordered list of production orders). Dispatches the next order when the line is idle.                             |
+| **MES**               | Receives an order from the Scheduler. Sets up the line (state → Setup, loads recipe, resets counters), then hands off to the Production engine. |
+| **Production Engine** | Runs the production loop: ticks line speed, evaluates stoppages, publishes MQTT updates on each tick.                                           |
+| **MQTT Publisher**    | Thin wrapper around `paho-mqtt`. All MQTT writes go through here.                                                                               |
 
 ### Simulation Speed
 
@@ -68,12 +68,14 @@ The simulator runs with a configurable **speed multiplier** (default `1.0` = rea
 ### Production Orders (Schedule)
 
 3–5 orders at startup, each specifying:
+
 - `SKU` (int)
-- `Units_to_Produce` (int)
+- `Run_Duration` (seconds) — how long the production run lasts before changeover
 
 ### Recipes
 
 One recipe per SKU, specifying:
+
 - `Recommended_Line_Speed` (units/min)
 - `Expected_Waste_Rate` (fraction, e.g. 0.03 = 3%)
 
@@ -101,39 +103,40 @@ One recipe per SKU, specifying:
 
 ### State Machine
 
-| Code | Label | Description |
-|------|-------|-------------|
-| 0 | Idle | No active order; waiting |
-| 1 | Setup | Loading recipe, resetting counters |
-| 2 | Running | Active production |
-| 5 | Stop | Unplanned stoppage |
-| 9 | Changeover | Between production orders |
+| Code | Label      | Description                        |
+| ---- | ---------- | ---------------------------------- |
+| 0    | Idle       | No active order; waiting           |
+| 1    | Setup      | Loading recipe, resetting counters |
+| 2    | Running    | Active production                  |
+| 5    | Stop       | Unplanned stoppage                 |
+| 9    | Changeover | Between production orders          |
 
 ---
 
 ## UNS — Topic Structure
 
-Base path: `NewCo/Soledad/RawProductDump/Line1/CutterFeed/`
+### Line-level topics — `NewCo/Soledad/RawProductDump/Line1/`
 
-| Topic | Type | Description |
-|-------|------|-------------|
-| `.../State` | int | Current state code (0/1/2/5/9) |
-| `.../StateLabel` | string | Human-readable state label |
-| `.../SKU` | int | Current SKU in production |
-| `.../UnitCount` | int | Good units produced this run |
-| `.../WasteCount` | int | Rejected/waste units this run |
-| `.../LineSpeed/Current` | float | Instantaneous line speed (units/min) |
+| Topic                       | Type   | Description                            |
+| --------------------------- | ------ | -------------------------------------- |
+| `.../State`                 | int    | Current state code (0/1/2/5/9)         |
+| `.../StateLabel`            | string | Human-readable state label             |
+| `.../SKU`                   | int    | Current SKU in production              |
+| `.../OEE/Availability`      | float  | Availability (0.0–1.0) for current run |
+| `.../Downtime/TotalSeconds` | int    | Cumulative stoppage seconds this run   |
+| `.../Downtime/EventCount`   | int    | Number of stoppages this run           |
+
+### Cell-level topics — `NewCo/Soledad/RawProductDump/Line1/CutterFeed/`
+
+| Topic                       | Type  | Description                            |
+| --------------------------- | ----- | -------------------------------------- |
+| `.../LineSpeed/Current`     | float | Instantaneous line speed (units/min)   |
 | `.../LineSpeed/Recommended` | float | Recipe-specified speed for current SKU |
-| `.../LineSpeed/Delta` | float | Current − Recommended (units/min) |
-| `.../LineSpeed/DeltaPct` | float | Delta as % of Recommended |
-| `.../LineSpeed/Avg1Min` | float | 1-minute rolling average speed |
-| `.../LineSpeed/Avg5Min` | float | 5-minute rolling average speed |
-| `.../LineSpeed/AvgRun` | float | Average speed since run start |
-| `.../OEE/Availability` | float | Availability (0.0–1.0) for current run |
-| `.../Downtime/TotalSeconds` | int | Cumulative stoppage seconds this run |
-| `.../Downtime/EventCount` | int | Number of stoppages this run |
-| `.../Order/UnitsTarget` | int | Target unit count for current order |
-| `.../Order/UnitsRemaining` | int | Units remaining in current order |
+| `.../LineSpeed/Delta`       | float | Current − Recommended (units/min)      |
+| `.../LineSpeed/DeltaPct`    | float | Delta as % of Recommended              |
+| `.../LineSpeed/Avg1Min`     | float | 1-minute rolling average speed         |
+| `.../LineSpeed/Avg5Min`     | float | 5-minute rolling average speed         |
+| `.../LineSpeed/AvgRun`      | float | Average speed since run start          |
 
 ---
 
@@ -157,18 +160,16 @@ One dashboard: **LineFeed — Raw Product Dump / Line 1**
 
 ### Panels
 
-| Panel | Type | Primary metric |
-|-------|------|----------------|
-| Current State | Stat (color-coded) | `StateLabel` |
-| Current SKU | Stat | `SKU` |
-| Line Speed vs. Recommended | Gauge + threshold | `Current`, `Recommended`, `Delta` |
-| Line Speed — Historical | Time-series | `Current`, `Recommended`, `Avg1Min`, `Avg5Min` |
-| Speed Delta % | Time-series + alert threshold | `DeltaPct` |
-| Unit Count | Stat / Bar gauge | `UnitCount` vs. `UnitsTarget` |
-| Waste Count | Stat | `WasteCount` |
-| OEE Availability | Gauge | `Availability` |
-| Downtime Events | Stat | `EventCount` |
-| Total Downtime | Stat | `TotalSeconds` |
+| Panel                      | Type                          | Primary metric                                 |
+| -------------------------- | ----------------------------- | ---------------------------------------------- |
+| Current State              | Stat (color-coded)            | `StateLabel`                                   |
+| Current SKU                | Stat                          | `SKU`                                          |
+| Line Speed vs. Recommended | Gauge + threshold             | `Current`, `Recommended`, `Delta`              |
+| Line Speed — Historical    | Time-series                   | `Current`, `Recommended`, `Avg1Min`, `Avg5Min` |
+| Speed Delta %              | Time-series + alert threshold | `DeltaPct`                                     |
+| OEE Availability           | Gauge                         | `Availability`                                 |
+| Downtime Events            | Stat                          | `EventCount`                                   |
+| Total Downtime             | Stat                          | `TotalSeconds`                                 |
 
 **Alert:** Speed Delta % exceeding a configurable threshold (e.g. +10%) should visually alarm on the dashboard (panel color change / annotation).
 
@@ -177,6 +178,7 @@ One dashboard: **LineFeed — Raw Product Dump / Line 1**
 ## Configuration
 
 The simulator will read from a config file (YAML or TOML) specifying:
+
 - MQTT broker host/port
 - Speed multiplier
 - Stoppage frequency (mean interval) and duration (mean)
@@ -184,10 +186,18 @@ The simulator will read from a config file (YAML or TOML) specifying:
 - Speed alert threshold
 - SKU recipes and production schedule
 
+### Mosquitto Broker
+
+- Host Address: 100.100.164.105
+- Host Port: 1883 (standard MQTT port)
+- Username: none
+- Password: none
+
 ---
 
 ## Out of Scope (this version)
 
+- Unit count and waste count tracking (no standard unit containers; no measurable throughput signal at this stage)
 - Reason codes for stoppages
 - Quality / OEE Quality component
 - Performance / OEE Performance component

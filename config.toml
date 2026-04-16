@@ -1,0 +1,58 @@
+[mqtt]
+host = "100.100.164.105"
+port = 1883
+
+[simulator]
+speed_multiplier = 1.0   # increase (e.g. 10.0) to compress time for demos
+tick_interval = 1.0      # seconds per sim tick
+
+[stoppages]
+mean_interval_seconds = 300.0   # avg time between unplanned stoppages
+mean_duration_seconds = 30.0    # avg stoppage length
+
+[changeover]
+duration_seconds = 60.0
+
+[alerts]
+speed_delta_pct_threshold = 10.0   # % above recommended triggers alarm colour
+
+# ---------------------------------------------------------------------------
+# Recipes — one per SKU
+# speed_bias: fractional overspeed applied as a drift bias (0.22 = +22%)
+# bias_start_fraction: how far into the run before bias activates (0.4 = 40%)
+# ---------------------------------------------------------------------------
+
+[[recipes]]
+sku = 101
+name = "Fresh Cut Lettuce"
+recommended_line_speed = 120.0
+speed_bias = 0.0
+
+[[recipes]]
+sku = 102
+name = "Shredded Cabbage"
+recommended_line_speed = 95.0
+speed_bias = 0.22            # DEMO: operator runs well above spec
+bias_start_fraction = 0.4   # looks normal at first, then climbs
+
+[[recipes]]
+sku = 103
+name = "Diced Onion"
+recommended_line_speed = 80.0
+speed_bias = 0.0
+
+# ---------------------------------------------------------------------------
+# Production schedule — processed in order
+# ---------------------------------------------------------------------------
+
+[[schedule]]
+sku = 101
+run_duration = 300   # 5 min
+
+[[schedule]]
+sku = 102
+run_duration = 420   # 7 min — long enough to show the bias building
+
+[[schedule]]
+sku = 103
+run_duration = 240   # 4 min
