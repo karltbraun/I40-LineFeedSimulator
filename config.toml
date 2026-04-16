@@ -1,5 +1,5 @@
 [mqtt]
-host = "100.100.164.105"
+host = "100.95.134.66"
 port = 1883
 
 [simulator]

@@ -33,6 +33,10 @@ def main() -> None:
         "--speed", type=float, default=None, metavar="MULTIPLIER",
         help="Speed multiplier override (e.g. 10 = 10x faster than real-time)"
     )
+    parser.add_argument(
+        "--loop", action="store_true",
+        help="Repeat the schedule indefinitely until Ctrl-C"
+    )
     args = parser.parse_args()
 
     cfg = load(args.config, speed_override=args.speed)
@@ -54,10 +58,15 @@ def main() -> None:
     console.print(f"  Broker:    {cfg.mqtt.host}:{cfg.mqtt.port}")
     console.print(f"  Speed:     {cfg.simulator.speed_multiplier}x")
     console.print(f"  Orders:    {len(cfg.schedule)}")
+    console.print(f"  Loop:      {'yes' if args.loop else 'no'}")
     console.rule()
 
     publisher.connect()
-    Scheduler(cfg, publisher).run()
+    while True:
+        Scheduler(cfg, publisher).run()
+        if not args.loop:
+            break
+        logger.info("Schedule complete — restarting")
     publisher.disconnect()
     console.print("[green]Schedule complete.[/green]")
 

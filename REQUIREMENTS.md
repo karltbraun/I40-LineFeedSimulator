@@ -188,7 +188,7 @@ The simulator will read from a config file (YAML or TOML) specifying:
 
 ### Mosquitto Broker
 
-- Host Address: 100.100.164.105
+- Host Address: 100.95.134.66 (localhost Tailscale VPN address)
 - Host Port: 1883 (standard MQTT port)
 - Username: none
 - Password: none

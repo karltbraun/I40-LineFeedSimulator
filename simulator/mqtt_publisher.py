@@ -25,5 +25,10 @@ class MqttPublisher:
         logger.info("Disconnected from MQTT broker")
 
     def publish(self, topic: str, value: float | int | str) -> None:
+        # Integers must be coerced to float so json.dumps produces {"value": 2.0}
+        # not {"value": 2}. InfluxDB line protocol treats bare integers as int type,
+        # which conflicts with the float schema established by decimal values.
+        if isinstance(value, int) and not isinstance(value, bool):
+            value = float(value)
         payload = json.dumps({"value": value})
         self._client.publish(topic, payload, qos=1)
