@@ -21,7 +21,7 @@ else
     exit 1
 fi
 
-CONTAINERS=(i40-influxdb i40-telegraf i40-grafana i40-nodered i40-ignition)
+CONTAINERS=(i40-mosquitto i40-influxdb i40-telegraf i40-grafana i40-nodered i40-ignition)
 
 # ---------------------------------------------------------------------------
 # Pre-flight
