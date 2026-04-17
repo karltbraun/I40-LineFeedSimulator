@@ -11,6 +11,7 @@ TOPICS: dict[str, str] = {
     "downtime_events":  f"{LINE}/Downtime/EventCount",
     # Cell-level
     "speed_current":    f"{CELL}/LineSpeed/Current",
+    "speed_set":        f"{CELL}/LineSpeed/Set",
     "speed_recommended":f"{CELL}/LineSpeed/Recommended",
     "speed_delta":      f"{CELL}/LineSpeed/Delta",
     "speed_delta_pct":  f"{CELL}/LineSpeed/DeltaPct",

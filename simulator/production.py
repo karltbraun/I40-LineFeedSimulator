@@ -25,7 +25,8 @@ class ProductionEngine:
         run_duration = order.run_duration
         stoppage_cfg = self._cfg.stoppages
 
-        speed = recipe.recommended_line_speed * (1.0 + recipe.speed_setpoint_pct)
+        set_speed = recipe.recommended_line_speed * (1.0 + recipe.speed_setpoint_pct)
+        speed = set_speed
         self._tracker.reset()
 
         scheduled_time = 0.0
@@ -51,7 +52,7 @@ class ProductionEngine:
                 speed += random.gauss(0, recipe.recommended_line_speed * 0.02)
 
             # --- Speed update (mean-reverting around setpoint) ---
-            target = recipe.recommended_line_speed * (1.0 + recipe.speed_setpoint_pct)
+            target = set_speed
             reversion = 0.15 * (target - speed)
             noise = random.gauss(0.0, recipe.recommended_line_speed * 0.012 * math.sqrt(tick))
             speed += reversion + noise
@@ -71,6 +72,7 @@ class ProductionEngine:
 
             # --- Publish all topics ---
             self._pub.publish(TOPICS["speed_current"],     round(speed, 2))
+            self._pub.publish(TOPICS["speed_set"],         round(set_speed, 2))
             self._pub.publish(TOPICS["speed_recommended"], round(recipe.recommended_line_speed, 2))
             self._pub.publish(TOPICS["speed_delta"],       round(delta, 2))
             self._pub.publish(TOPICS["speed_delta_pct"],   round(delta_pct, 2))
