@@ -5,6 +5,7 @@ description = "I40 demo: simulates a fresh-foods production line and publishes m
 requires-python = ">=3.12"
 dependencies = [
     "paho-mqtt>=2.1.0",
+    "python-dotenv>=1.2.2",
     "rich>=15.0.0",
     "tomli>=2.4.1",
 ]

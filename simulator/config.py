@@ -5,10 +5,14 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 @dataclass
 class MqttConfig:
-    host: str = "100.100.164.105"
+    host: str = "localhost"
     port: int = 1883
 
 
@@ -82,8 +86,8 @@ def load(path: Path, speed_override: float | None = None) -> Config:
     if speed_override is not None:
         cfg.simulator.speed_multiplier = speed_override
 
-    if (mqtt_host := os.environ.get("MQTT_HOST")):
-        cfg.mqtt.host = mqtt_host
+    if (mqtt_broker := os.environ.get("MQTT_BROKER")):
+        cfg.mqtt.host = mqtt_broker
     if (mqtt_port := os.environ.get("MQTT_PORT")):
         cfg.mqtt.port = int(mqtt_port)
 
