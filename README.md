@@ -9,23 +9,28 @@ The core demo story: a line operator running the cutter feed faster than the SKU
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/) Python package manager
-- I40-Demo Docker stack running (`../I40-Demo/`)
-- Tailscale connected (MQTT broker at `100.95.134.66:1883`)
+- I40-Stack running (`../I40-Stack/`) — `start-lfs` handles this automatically
 
 ---
 
 ## Starting the Demo
 
-**Foreground — recommended for presentations (live log output):**
+**Recommended — starts I40-Stack if needed, then runs the simulator:**
+
+```bash
+./start-lfs --speed 5 --loop
+```
+
+**Direct — if I40-Stack is already running:**
 
 ```bash
 uv run python main.py --speed 5 --loop
 ```
 
-**Background — runs silently:**
+**Background:**
 
 ```bash
-uv run python main.py --speed 5 --loop &
+./start-lfs --speed 5 --loop &
 ```
 
 ### Options
