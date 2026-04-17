@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Ensure the I40-Demo Docker stack is running. Starts only containers that are
+# not already up; skips the image pull so it's fast on repeat invocations.
+set -euo pipefail
+
+I40_DIR="$(cd "$(dirname "$0")/../I40-Demo" && pwd)"
+COMPOSE_FILE="docker-compose.m3.yml"
+CONTAINERS=(i40-mosquitto i40-influxdb i40-telegraf i40-grafana i40-nodered i40-ignition)
+
+# ---------------------------------------------------------------------------
+# Pre-flight
+# ---------------------------------------------------------------------------
+if [ ! -f "$I40_DIR/.env" ]; then
+    echo "ERROR: $I40_DIR/.env not found." >&2
+    echo "  Run: cp $I40_DIR/.env.template $I40_DIR/.env  and fill in values." >&2
+    exit 1
+fi
+
+if ! docker info &>/dev/null; then
+    echo "ERROR: Docker daemon is not running." >&2
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Check which containers are already running
+# ---------------------------------------------------------------------------
+not_running=()
+for name in "${CONTAINERS[@]}"; do
+    status=$(docker inspect --format '{{.State.Status}}' "$name" 2>/dev/null || echo "missing")
+    if [[ "$status" != "running" ]]; then
+        not_running+=("$name ($status)")
+    fi
+done
+
+if [[ ${#not_running[@]} -eq 0 ]]; then
+    echo "All containers already running."
+else
+    echo "Starting containers (skipping pull)..."
+    cd "$I40_DIR"
+    docker compose -f "$COMPOSE_FILE" up -d --no-build
+fi
+
+# ---------------------------------------------------------------------------
+# Status summary
+# ---------------------------------------------------------------------------
+echo ""
+printf "%-20s %s\n" "CONTAINER" "STATUS"
+printf "%-20s %s\n" "---------" "------"
+for name in "${CONTAINERS[@]}"; do
+    status=$(docker inspect --format '{{.State.Status}}' "$name" 2>/dev/null || echo "missing")
+    printf "%-20s %s\n" "$name" "$status"
+done
+
+echo ""
+echo "  Mosquitto   mqtt://localhost:1883"
+echo "  InfluxDB    http://localhost:8181"
+echo "  Telegraf    (internal)"
+echo "  Grafana     http://localhost:3000"
+echo "  Node-RED    http://localhost:1881"
+echo "  Ignition    http://localhost:8088"
