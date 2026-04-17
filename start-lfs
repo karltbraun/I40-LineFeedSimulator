@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Ensure the I40-Demo Docker stack is running, then launch the LineFeed Simulator.
+# Ensure the I40-Stack Docker stack is running, then launch the LineFeed Simulator.
 # Auto-selects the correct compose file for the current platform.
 # Skips image pull for fast repeat starts.
 set -euo pipefail
 
 LFS_DIR="$(cd "$(dirname "$0")" && pwd)"
-I40_DIR="$(cd "$LFS_DIR/../I40-Demo" && pwd)"
+I40_DIR="$(cd "$LFS_DIR/../I40-Stack" && pwd)"
 
 arch=$(uname -m)
 os=$(uname -s)
