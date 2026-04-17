@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import os
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -81,5 +81,10 @@ def load(path: Path, speed_override: float | None = None) -> Config:
 
     if speed_override is not None:
         cfg.simulator.speed_multiplier = speed_override
+
+    if (mqtt_host := os.environ.get("MQTT_HOST")):
+        cfg.mqtt.host = mqtt_host
+    if (mqtt_port := os.environ.get("MQTT_PORT")):
+        cfg.mqtt.port = int(mqtt_port)
 
     return cfg
