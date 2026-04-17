@@ -25,7 +25,7 @@ class ProductionEngine:
         run_duration = order.run_duration
         stoppage_cfg = self._cfg.stoppages
 
-        speed = recipe.recommended_line_speed
+        speed = recipe.recommended_line_speed * (1.0 + recipe.speed_setpoint_pct)
         self._tracker.reset()
 
         scheduled_time = 0.0
@@ -50,12 +50,11 @@ class ProductionEngine:
                 # Small drift after recovery
                 speed += random.gauss(0, recipe.recommended_line_speed * 0.02)
 
-            # --- Speed update (biased random walk) ---
-            progress = elapsed / run_duration if run_duration > 0 else 1.0
-            active_bias = recipe.speed_bias if progress >= recipe.bias_start_fraction else 0.0
-            drift_mean = active_bias * recipe.recommended_line_speed * tick
-            drift_std = recipe.recommended_line_speed * 0.015 * math.sqrt(tick)
-            speed += random.gauss(drift_mean, drift_std)
+            # --- Speed update (mean-reverting around setpoint) ---
+            target = recipe.recommended_line_speed * (1.0 + recipe.speed_setpoint_pct)
+            reversion = 0.15 * (target - speed)
+            noise = random.gauss(0.0, recipe.recommended_line_speed * 0.012 * math.sqrt(tick))
+            speed += reversion + noise
             speed = max(recipe.recommended_line_speed * 0.3,
                         min(speed, recipe.recommended_line_speed * 2.5))
 

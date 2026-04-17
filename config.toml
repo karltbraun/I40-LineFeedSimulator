@@ -18,41 +18,48 @@ speed_delta_pct_threshold = 10.0   # % above recommended triggers alarm colour
 
 # ---------------------------------------------------------------------------
 # Recipes — one per SKU
-# speed_bias: fractional overspeed applied as a drift bias (0.22 = +22%)
-# bias_start_fraction: how far into the run before bias activates (0.4 = 40%)
+# speed_setpoint_pct: operator's intended speed relative to recipe spec
+#   0.0  = running at spec
+#  +0.10 = running 10% over spec (overspeed)
+#  -0.05 = running 5% under spec (underspeed)
+# Speed varies continuously around the setpoint with small random noise.
 # ---------------------------------------------------------------------------
 
 [[recipes]]
 sku = 101
 name = "Fresh Cut Lettuce"
 recommended_line_speed = 120.0
-speed_bias = 0.0
+speed_setpoint_pct = 0.0
 
 [[recipes]]
 sku = 102
 name = "Shredded Cabbage"
 recommended_line_speed = 95.0
-speed_bias = 0.22            # DEMO: operator runs well above spec
-bias_start_fraction = 0.4   # looks normal at first, then climbs
+speed_setpoint_pct = 0.10   # DEMO: operator running 10% over spec
 
 [[recipes]]
 sku = 103
 name = "Diced Onion"
 recommended_line_speed = 80.0
-speed_bias = 0.0
+speed_setpoint_pct = -0.05  # DEMO: operator running 5% under spec
 
 # ---------------------------------------------------------------------------
-# Production schedule — processed in order
+# Production schedule — processed in order, repeats with --loop
+# Tells the story: normal → overspeed → underspeed → normal again
 # ---------------------------------------------------------------------------
 
 [[schedule]]
 sku = 101
-run_duration = 300   # 5 min
+run_duration = 300   # 5 min — baseline, at spec
 
 [[schedule]]
 sku = 102
-run_duration = 420   # 7 min — long enough to show the bias building
+run_duration = 420   # 7 min — overspeed demo
 
 [[schedule]]
 sku = 103
-run_duration = 240   # 4 min
+run_duration = 300   # 5 min — underspeed demo
+
+[[schedule]]
+sku = 101
+run_duration = 300   # 5 min — return to normal

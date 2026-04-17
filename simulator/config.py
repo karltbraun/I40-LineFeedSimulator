@@ -39,8 +39,7 @@ class Recipe:
     sku: int
     name: str
     recommended_line_speed: float
-    speed_bias: float = 0.0
-    bias_start_fraction: float = 0.4
+    speed_setpoint_pct: float = 0.0  # fractional offset from recommended (0.10 = +10%, -0.05 = -5%)
 
 
 @dataclass
