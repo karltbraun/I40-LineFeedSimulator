@@ -1,11 +1,26 @@
 #!/usr/bin/env bash
-# Ensure the I40-Demo Docker stack is running. Starts only containers that are
-# not already up; skips the image pull so it's fast on repeat invocations.
+# Ensure the I40-Demo Docker stack is running, then launch the LineFeed Simulator.
+# Auto-selects the correct compose file for the current platform.
+# Skips image pull for fast repeat starts.
 set -euo pipefail
 
 I40_DIR="$(cd "$(dirname "$0")/../I40-Demo" && pwd)"
-COMPOSE_FILE="docker-compose.m3.yml"
-CONTAINERS=(i40-mosquitto i40-influxdb i40-telegraf i40-grafana i40-nodered i40-ignition)
+
+arch=$(uname -m)
+os=$(uname -s)
+
+if [[ "$arch" == "arm64" ]]; then
+    COMPOSE_FILE="docker-compose.m3.yml"
+elif [[ "$arch" == "x86_64" && "$os" == "Darwin" ]]; then
+    COMPOSE_FILE="docker-compose.x86_64.yml"
+elif [[ "$arch" == "x86_64" && "$os" == "Linux" ]]; then
+    COMPOSE_FILE="docker-compose.cloud.yml"
+else
+    echo "ERROR: Unsupported platform: $os/$arch" >&2
+    exit 1
+fi
+
+CONTAINERS=(i40-influxdb i40-telegraf i40-grafana i40-nodered i40-ignition)
 
 # ---------------------------------------------------------------------------
 # Pre-flight
@@ -35,6 +50,8 @@ done
 if [[ ${#not_running[@]} -eq 0 ]]; then
     echo "All containers already running."
 else
+    echo "Platform: $os/$arch"
+    echo "Compose:  $COMPOSE_FILE"
     echo "Starting containers (skipping pull)..."
     cd "$I40_DIR"
     docker compose -f "$COMPOSE_FILE" up -d --no-build
@@ -52,9 +69,16 @@ for name in "${CONTAINERS[@]}"; do
 done
 
 echo ""
-echo "  Mosquitto   mqtt://localhost:1883"
 echo "  InfluxDB    http://localhost:8181"
 echo "  Telegraf    (internal)"
 echo "  Grafana     http://localhost:3000"
 echo "  Node-RED    http://localhost:1881"
 echo "  Ignition    http://localhost:8088"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Launch simulator
+# ---------------------------------------------------------------------------
+cd "$(dirname "$0")"
+echo "Starting LineFeed Simulator..."
+exec uv run python main.py "$@"
