@@ -15,7 +15,7 @@ if [[ "$arch" == "arm64" ]]; then
 elif [[ "$arch" == "x86_64" && "$os" == "Darwin" ]]; then
     COMPOSE_FILE="docker-compose.x86_64.yml"
 elif [[ "$arch" == "x86_64" && "$os" == "Linux" ]]; then
-    COMPOSE_FILE="docker-compose.cloud.yml"
+    COMPOSE_FILE="docker-compose.x86_64.yml"
 else
     echo "ERROR: Unsupported platform: $os/$arch" >&2
     exit 1
